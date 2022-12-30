@@ -110,9 +110,9 @@ Method: POST
 Endpoint: "/charity_project/"
 Payload:
 {
-    "name": "string",
-    "description": "string",
-    "full_amount": 0
+    "name": "first",
+    "description": "first project",
+    "full_amount": 100000
 }
 ```
 
@@ -122,8 +122,8 @@ Method: POST
 Endpoint: "/donation/"
 Payload:
 {
-  "full_amount": 0,
-  "comment": "string"
+  "full_amount": 10000,
+  "comment": "with pleasure"
 }
 ```
 
