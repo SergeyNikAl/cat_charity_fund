@@ -21,7 +21,7 @@ async def process_investments(
     all_investments = await in_obj_invest.get_uninvested_projects(session)
     for investment in all_investments:
         need_for_invest = (
-                from_obj_invest.full_amount - from_obj_invest.invested_amount
+            from_obj_invest.full_amount - from_obj_invest.invested_amount
         )
         free_for_invest = investment.full_amount - investment.invested_amount
         append_obj = min(need_for_invest, free_for_invest)
