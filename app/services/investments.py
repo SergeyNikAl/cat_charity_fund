@@ -1,49 +1,34 @@
 from datetime import datetime
+from typing import Any, Tuple
 
-from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models import CharityProject, Donation
+from app.core.db import Base
 
 
-def close_project_or_donation(obj):
-    obj.invested_amount = obj.full_amount
-    obj.fully_invested = True
-    obj.close_date = datetime.now()
+def close_project_or_donation(objects: Tuple[Any, Base]) -> None:
+    for object in objects:
+        if object.full_amount == object.invested_amount:
+            object.fully_invested = True
+            object.close_date = datetime.now()
 
 
 async def process_investments(
+        from_obj_invest: Base,
+        in_obj_invest: Base,
         session: AsyncSession
 ):
-    projects = await session.execute(
-        select(CharityProject).where(
-            ~CharityProject.fully_invested
-        ).order_by(CharityProject.create_date)
-    )
-    for project in projects.scalars().all():
-        donations = await session.execute(
-            select(Donation).where(
-                ~Donation.fully_invested
-            ).order_by(Donation.create_date)
+    all_investments = await in_obj_invest.get_uninvested_projects(session)
+    for investment in all_investments:
+        need_for_invest = (
+                from_obj_invest.full_amount - from_obj_invest.invested_amount
         )
-        for donation in donations.scalars().all():
-            project_amount_left = (
-                project.full_amount - project.invested_amount
-            )
-            donation_amount_left = (
-                donation.full_amount - donation.invested_amount
-            )
-            if project_amount_left > donation_amount_left:
-                project.invested_amount += donation_amount_left
-                close_project_or_donation(donation)
-            elif project_amount_left < donation_amount_left:
-                donation.invested_amount += project_amount_left
-                close_project_or_donation(project)
-            else:
-                close_project_or_donation(project)
-                close_project_or_donation(donation)
-            session.add(project)
-            session.add(donation)
-            if project.fully_invested:
-                break
+        free_for_invest = investment.full_amount - investment.invested_amount
+        append_obj = min(need_for_invest, free_for_invest)
+        investment.invested_amount += append_obj
+        from_obj_invest.invested_amount += append_obj
+        close_project_or_donation((investment, from_obj_invest))
+    session.add_all((*all_investments, from_obj_invest))
     await session.commit()
+    await session.refresh(from_obj_invest)
+    return from_obj_invest

@@ -3,22 +3,20 @@ from typing import List
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.api.validators import (
+    check_charity_project_before_edit,
+    check_name_duplicate
+)
 from app.core.db import get_async_session
 from app.core.user import current_superuser
 from app.crud.charity_project import charity_project_crud
+from app.crud.donation import donation_crud
 from app.schemas.charity_project import (
     CharityProjectCreate,
     CharityProjectDB,
     CharityProjectUpdate
 )
-from app.api.validators import (
-    check_charity_project_before_edit,
-    check_name_duplicate
-)
-from app.services.investments import (
-    close_project_or_donation,
-    process_investments
-)
+from app.services.investments import process_investments
 
 router = APIRouter()
 
@@ -48,8 +46,11 @@ async def create_charity_project(
 
     await check_name_duplicate(charity_project.name, session)
     new_project = await charity_project_crud.create(charity_project, session)
-    await process_investments(session)
-    await session.refresh(new_project)
+    await process_investments(
+        from_obj_invest=new_project,
+        in_obj_invest=donation_crud,
+        session=session
+    )
     return new_project
 
 
@@ -75,9 +76,6 @@ async def update_charity_project(
     )
     if obj_in.name is not None:
         await check_name_duplicate(obj_in.name, session)
-    if full_amount == existing_project.invested_amount:
-        existing_project.full_amount = full_amount
-        close_project_or_donation(existing_project)
     return await charity_project_crud.update(
         existing_project,
         obj_in,

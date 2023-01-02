@@ -1,10 +1,10 @@
 from typing import Optional
 
 from fastapi.encoders import jsonable_encoder
-from sqlalchemy import select
+from sqlalchemy import select, asc
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models import User
+from app.models import User, CharityProject
 
 
 class CRUDBase:
@@ -15,7 +15,7 @@ class CRUDBase:
         self,
         obj_id: int,
         session: AsyncSession,
-    ):
+    ) -> Optional[int]:
         db_obj = await session.execute(
             select(self.model).where(self.model.id == obj_id)
         )
@@ -24,16 +24,30 @@ class CRUDBase:
     async def get_multi(
         self,
         session: AsyncSession
-    ):
+    ) -> Optional[CharityProject]:
         db_objs = await session.execute(select(self.model))
         return db_objs.scalars().all()
+
+    async def get_uninvested_projects(
+            self,
+            session: AsyncSession
+    ) -> Optional[CharityProject]:
+        objects = await session.scalars(
+            select(self.model).where(
+                self.model.fully_invested.is_(False)
+            ).order_by(
+                asc('create_date')
+            )
+        )
+        return objects.all()
 
     async def create(
         self,
         obj_in,
         session: AsyncSession,
-        user: Optional[User] = None
-    ):
+        user: Optional[User] = None,
+        create_date: bool = True
+    ) -> CharityProject:
         obj_in_data = obj_in.dict()
         if user is not None:
             obj_in_data['user_id'] = user.id
@@ -48,7 +62,7 @@ class CRUDBase:
         db_obj,
         obj_in,
         session: AsyncSession,
-    ):
+    ) -> CharityProject:
         obj_data = jsonable_encoder(db_obj)
         update_data = obj_in.dict(exclude_unset=True)
         for field in obj_data:
@@ -63,7 +77,7 @@ class CRUDBase:
         self,
         db_obj,
         session: AsyncSession,
-    ):
+    ) -> CharityProject:
         await session.delete(db_obj)
         await session.commit()
         return db_obj
