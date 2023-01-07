@@ -44,12 +44,24 @@ async def create_donation(
 ):
     """Только для зарегистрированных пользователей."""
 
-    new_donation = await donation_crud.create(donation, session, user)
-    await process_investments(
-        from_obj_invest=new_donation,
-        in_obj_invest=charity_project_crud,
-        session=session
+    new_donation = await donation_crud.create(
+        donation,
+        session,
+        user,
+        create_date=False
     )
+    invested_project = await charity_project_crud.get_uninvested_projects(
+        session
+    )
+    if invested_project:
+        correct_donation = process_investments(
+            target=new_donation,
+            in_obj_invest=invested_project
+        )
+        for object in correct_donation:
+            session.add(object)
+    await session.commit()
+    await session.refresh(new_donation)
     return new_donation
 
 

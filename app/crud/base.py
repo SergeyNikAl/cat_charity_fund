@@ -1,7 +1,7 @@
 from typing import Optional
 
 from fastapi.encoders import jsonable_encoder
-from sqlalchemy import select, asc
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import User, CharityProject
@@ -32,14 +32,12 @@ class CRUDBase:
             self,
             session: AsyncSession
     ) -> Optional[CharityProject]:
-        objects = await session.scalars(
+        objects = await session.execute(
             select(self.model).where(
-                self.model.fully_invested.is_(False)
-            ).order_by(
-                asc('create_date')
+                self.model.fully_invested == 0
             )
         )
-        return objects.all()
+        return objects.scalars().all()
 
     async def create(
         self,
@@ -53,8 +51,9 @@ class CRUDBase:
             obj_in_data['user_id'] = user.id
         db_obj = self.model(**obj_in_data)
         session.add(db_obj)
-        await session.commit()
-        await session.refresh(db_obj)
+        if create_date:
+            await session.commit()
+            await session.refresh(db_obj)
         return db_obj
 
     async def update(
