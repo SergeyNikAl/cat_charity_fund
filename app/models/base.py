@@ -20,4 +20,10 @@ class CharityDonationBase(Base):
     close_date = Column(DateTime)
 
     def __repr__(self) -> str:
-        return f'Необходимо пожертвований {self.full_amount}'
+        return (
+            f'Всего пожертвований: {self.full_amount}, '
+            f'Внесено/распределено: {self.invested_amount}, '
+            f'{self.fully_invested}, '
+            f'{self.create_date}, '
+            f'{self.close_date}'
+        )

@@ -48,18 +48,19 @@ async def create_donation(
         donation,
         session,
         user,
-        create_date=False
+        db_commiting=False
     )
-    invested_project = await charity_project_crud.get_uninvested_projects(
-        session
-    )
-    if invested_project:
-        correct_donation = process_investments(
-            target=new_donation,
-            in_obj_invest=invested_project
+    projects_for_investment = (
+        await charity_project_crud.get_uninvested_objects(
+            session
         )
-        for object in correct_donation:
-            session.add(object)
+    )
+    if projects_for_investment:
+        correct_donations = process_investments(
+            target=new_donation,
+            sources=projects_for_investment
+        )
+        session.add_all(correct_donations)
     await session.commit()
     await session.refresh(new_donation)
     return new_donation

@@ -1,10 +1,13 @@
-from typing import Optional
+from typing import List, Optional, TypeVar
 
 from fastapi.encoders import jsonable_encoder
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.db import Base
 from app.models import User, CharityProject
+
+ModelType = TypeVar('ModelType', bound=Base)
 
 
 class CRUDBase:
@@ -28,30 +31,27 @@ class CRUDBase:
         db_objs = await session.execute(select(self.model))
         return db_objs.scalars().all()
 
-    async def get_uninvested_projects(
+    async def get_uninvested_objects(
             self,
             session: AsyncSession
-    ) -> Optional[CharityProject]:
-        objects = await session.execute(
-            select(self.model).where(
-                self.model.fully_invested == 0
-            )
-        )
-        return objects.scalars().all()
+    ) -> List[ModelType]:
+        return await session.scalars(select(self.model).where(
+            self.model.fully_invested == 0
+        ))
 
     async def create(
         self,
         obj_in,
         session: AsyncSession,
         user: Optional[User] = None,
-        create_date: bool = True
+        db_commiting: bool = True
     ) -> CharityProject:
         obj_in_data = obj_in.dict()
         if user is not None:
             obj_in_data['user_id'] = user.id
         db_obj = self.model(**obj_in_data)
         session.add(db_obj)
-        if create_date:
+        if db_commiting:
             await session.commit()
             await session.refresh(db_obj)
         return db_obj
