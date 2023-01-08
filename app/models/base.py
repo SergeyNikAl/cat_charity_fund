@@ -21,9 +21,9 @@ class CharityDonationBase(Base):
 
     def __repr__(self) -> str:
         return (
-            f'Всего пожертвований: {self.full_amount}, '
-            f'Внесено/распределено: {self.invested_amount}, '
-            f'{self.fully_invested}, '
-            f'{self.create_date}, '
-            f'{self.close_date}'
+            f'full_amount: {self.full_amount}, '
+            f'invested_amount: {self.invested_amount}, '
+            f'fully_invested: {self.fully_invested}, '
+            f'create_date: {self.create_date}, '
+            f'close_date: {self.close_date}'
         )

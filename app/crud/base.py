@@ -5,7 +5,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.db import Base
-from app.models import User, CharityProject
+from app.models import User
 
 ModelType = TypeVar('ModelType', bound=Base)
 
@@ -27,7 +27,7 @@ class CRUDBase:
     async def get_multi(
         self,
         session: AsyncSession
-    ) -> Optional[CharityProject]:
+    ) -> List[ModelType]:
         db_objs = await session.execute(select(self.model))
         return db_objs.scalars().all()
 
@@ -45,7 +45,7 @@ class CRUDBase:
         session: AsyncSession,
         user: Optional[User] = None,
         db_commiting: bool = True
-    ) -> CharityProject:
+    ) -> ModelType:
         obj_in_data = obj_in.dict()
         if user is not None:
             obj_in_data['user_id'] = user.id
@@ -61,7 +61,7 @@ class CRUDBase:
         db_obj,
         obj_in,
         session: AsyncSession,
-    ) -> CharityProject:
+    ) -> ModelType:
         obj_data = jsonable_encoder(db_obj)
         update_data = obj_in.dict(exclude_unset=True)
         for field in obj_data:
@@ -76,7 +76,7 @@ class CRUDBase:
         self,
         db_obj,
         session: AsyncSession,
-    ) -> CharityProject:
+    ) -> ModelType:
         await session.delete(db_obj)
         await session.commit()
         return db_obj

@@ -10,7 +10,7 @@ class CharityProject(CharityDonationBase):
 
     def __repr__(self) -> str:
         return (
-            f'Проект: {self.name[:15]}, '
-            f'{self.description[:15]}, '
+            f'name: {self.name[:15]}, '
+            f'description: {self.description[:15]}, '
             f'{super().__repr__()}'
         )

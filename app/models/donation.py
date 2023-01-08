@@ -9,7 +9,7 @@ class Donation(CharityDonationBase):
 
     def __repr__(self) -> str:
         return (
-            f'Благотворитель: {self.user_id}, '
-            f'{self.comment[:15]} , '
+            f'user_id: {self.user_id}, '
+            f'comment: {self.comment[:15]} , '
             f'{super().__repr__()}'
         )

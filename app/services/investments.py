@@ -6,8 +6,7 @@ def process_investments(
     sources
 ):
     modified_targets = []
-    if not target.invested_amount:
-        target.invested_amount = 0
+    target.invested_amount = int(target.invested_amount or 0)
     for source in sources:
         investing_volume = min(
             source.full_amount - source.invested_amount,
@@ -18,5 +17,6 @@ def process_investments(
             if object.invested_amount == object.full_amount:
                 object.fully_invested = True
                 object.close_date = datetime.now()
-        modified_targets.append(source)
+        if not target.fully_invested:
+            modified_targets.append(source)
     return modified_targets
